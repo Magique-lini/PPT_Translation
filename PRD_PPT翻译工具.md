@@ -1,9 +1,15 @@
 # PPT 翻译工具 · 产品需求文档
+首先看效果图：
+<img width="2817" height="1204" alt="o_2" src="https://github.com/user-attachments/assets/cec86776-71ba-4e41-b542-81af25555cea" />
+<img width="2936" height="1392" alt="o_1" src="https://github.com/user-attachments/assets/4b798a3d-a78e-4f99-805c-e27e0d6a105c" />
+使用界面如下：
+<img width="1280" height="662" alt="1" src="https://github.com/user-attachments/assets/68156120-cff6-402e-8abe-96773789e1d3" />
+具体怎么运行请看文章最后，产品需求文档描述如下：
 
 **版本**：v1.1  
 **日期**：2026-06-24  
 **状态**：草稿  
-**变更**：v1.1 将产品形态由纯 API 服务调整为 **Web 应用 + 后端 API**
+**形态**：**Web 应用 + 后端 API**
 
 ---
 
@@ -225,5 +231,8 @@ GET /v1/domains    返回所有支持的翻译场景列表及说明
 
 ## 七、验收标准
 下载代码包之后，在config.py文件中更新自己的API key，
-(https://i-blog.csdnimg.cn/direct/7d94815411654d8ebe5a80b707533806.png)
+<img width="1218" height="1032" alt="config" src="https://github.com/user-attachments/assets/fb6cd52a-c9ea-4ec0-8f73-9004ca6cbb27" />
 运行main.py 文件，运行成功之后，按住 “ctrl + 鼠标左键” 就可以直接访问这个localhost端口上传PPT进行翻译了，上手非常便捷，欢迎大家使用
+<img width="1280" height="497" alt="run" src="https://github.com/user-attachments/assets/3c43ddc4-e983-48a8-9da3-f7f543989dec" />
+
+
