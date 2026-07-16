@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PPT 翻译工具</title>
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      background: #f0f4f8;
+      color: #1a202c;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ── Header ── */
+    header {
+      width: 100%;
+      background: #1e40af;
+      color: white;
+      padding: 18px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.2);
+    }
+    header .logo { font-size: 24px; }
+    header h1 { font-size: 20px; font-weight: 700; letter-spacing: .3px; }
+    header p  { font-size: 13px; opacity: .8; margin-top: 2px; }
+
+    /* ── Main Card ── */
+    .card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,.08);
+      padding: 36px;
+      width: 100%;
+      max-width: 640px;
+      margin: 36px 16px;
+    }
+
+    /* ── Drop Zone ── */
+    .drop-zone {
+      border: 2px dashed #93c5fd;
+      border-radius: 12px;
+      padding: 48px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: background .2s, border-color .2s;
+      background: #eff6ff;
+    }
+    .drop-zone:hover, .drop-zone.dragover {
+      background: #dbeafe;
+      border-color: #3b82f6;
+    }
+    .drop-zone .icon { font-size: 48px; margin-bottom: 12px; }
+    .drop-zone .hint { color: #4b5563; font-size: 15px; margin-bottom: 6px; }
+    .drop-zone .sub  { color: #9ca3af; font-size: 13px; }
+    .drop-zone .file-selected {
+      margin-top: 14px;
+      background: #dbeafe;
+      border-radius: 8px;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: #1e40af;
+      font-weight: 500;
+    }
+    #file-input { display: none; }
+
+    /* ── Options Row ── */
+    .options-row {
+      display: flex;
+      gap: 16px;
+      margin-top: 24px;
+      flex-wrap: wrap;
+    }
+    .option-group { flex: 1; min-width: 160px; }
+    label.opt-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 8px;
+    }
+
+    /* Language toggle */
+    .lang-toggle {
+      display: flex;
+      border: 1.5px solid #d1d5db;
+      border-radius: 8px;
+      overflow: hidden;
+      height: 42px;
+    }
+    .lang-toggle button {
+      flex: 1;
+      border: none;
+      background: white;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      color: #6b7280;
+      transition: background .15s, color .15s;
+    }
+    .lang-toggle button.active {
+      background: #1e40af;
+      color: white;
+    }
+    .lang-toggle .sep {
+      width: 1px;
+      background: #d1d5db;
+      flex-shrink: 0;
+    }
+
+    /* Domain select */
+    select {
+      width: 100%;
+      height: 42px;
+      border: 1.5px solid #d1d5db;
+      border-radius: 8px;
+      padding: 0 12px;
+      font-size: 14px;
+      color: #374151;
+      background: white;
+      cursor: pointer;
+      outline: none;
+      transition: border-color .2s;
+    }
+    select:focus { border-color: #3b82f6; }
+
+    /* ── Translate Button ── */
+    .btn-translate {
+      margin-top: 28px;
+      width: 100%;
+      height: 50px;
+      background: #1e40af;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .2s, opacity .2s;
+      letter-spacing: .3px;
+    }
+    .btn-translate:hover:not(:disabled) { background: #1d4ed8; }
+    .btn-translate:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* ── Progress Section ── */
+    .progress-section {
+      margin-top: 28px;
+      display: none;
+    }
+    .progress-section.show { display: block; }
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      color: #374151;
+      margin-bottom: 10px;
+    }
+    .progress-label .status-text { font-weight: 500; }
+    .progress-label .pct { color: #1e40af; font-weight: 700; }
+    .progress-bar-bg {
+      background: #e5e7eb;
+      border-radius: 99px;
+      height: 10px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, #3b82f6, #1e40af);
+      transition: width .4s ease;
+      width: 0%;
+    }
+    .progress-bar-fill.indeterminate {
+      width: 40% !important;
+      animation: slide 1.4s ease-in-out infinite;
+    }
+    @keyframes slide {
+      0%   { transform: translateX(-100%); }
+      100% { transform: translateX(300%); }
+    }
+
+    /* ── Result Section ── */
+    .result-section {
+      margin-top: 24px;
+      display: none;
+    }
+    .result-section.show { display: block; }
+
+    .result-success {
+      background: #f0fdf4;
+      border: 1.5px solid #86efac;
+      border-radius: 12px;
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .result-success .check { font-size: 32px; }
+    .result-success .msg   { font-size: 15px; color: #15803d; font-weight: 500; }
+    .result-success .sub   { font-size: 13px; color: #4b5563; margin-top: 2px; }
+
+    .btn-download {
+      margin-top: 14px;
+      width: 100%;
+      height: 46px;
+      background: #16a34a;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .btn-download:hover { background: #15803d; }
+
+    .result-error {
+      background: #fef2f2;
+      border: 1.5px solid #fca5a5;
+      border-radius: 12px;
+      padding: 20px 24px;
+    }
+    .result-error .err-title { color: #dc2626; font-weight: 600; font-size: 15px; margin-bottom: 6px; }
+    .result-error .err-msg   { color: #6b7280; font-size: 13px; }
+
+    .btn-retry {
+      margin-top: 14px;
+      width: 100%;
+      height: 42px;
+      background: white;
+      color: #374151;
+      border: 1.5px solid #d1d5db;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .btn-retry:hover { background: #f9fafb; }
+
+    /* ── Footer ── */
+    footer {
+      margin-top: auto;
+      padding: 20px;
+      color: #9ca3af;
+      font-size: 12px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo"></div>
+  <div>
+    <h1>PPT 翻译工具</h1>
+    <p>中英双向翻译 · 保留原始格式 · 场景化精准用词</p>
+  </div>
+</header>
+
+<div class="card">
+
+  <!-- 上传区域 -->
+  <div class="drop-zone" id="drop-zone">
+    <div class="icon">📂</div>
+    <div class="hint">拖拽 .pptx 文件到此处，或点击选择</div>
+    <div class="sub">最大支持 50 MB</div>
+    <div class="file-selected" id="file-info" style="display:none;">
+      <span id="file-name"></span>
+    </div>
+  </div>
+  <input type="file" id="file-input" accept=".pptx" />
+
+  <!-- 选项 -->
+  <div class="options-row">
+    <div class="option-group">
+      <label class="opt-label">翻译方向</label>
+      <div class="lang-toggle">
+        <button id="btn-zh-en" class="active" onclick="setLang('zh','en')">中文 → English</button>
+        <div class="sep"></div>
+        <button id="btn-en-zh" onclick="setLang('en','zh')">English → 中文</button>
+      </div>
+    </div>
+    <div class="option-group">
+      <label class="opt-label">翻译场景</label>
+      <select id="domain-select">
+        <!-- 由 JS 动态填充 -->
+      </select>
+    </div>
+  </div>
+
+  <!-- 翻译按钮 -->
+  <button class="btn-translate" id="btn-translate" onclick="startTranslation()" disabled>
+    选择文件后开始翻译
+  </button>
+
+  <!-- 进度 -->
+  <div class="progress-section" id="progress-section">
+    <div class="progress-label">
+      <span class="status-text" id="status-text">正在翻译...</span>
+      <span class="pct" id="pct-text">0%</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill indeterminate" id="progress-fill"></div>
+    </div>
+  </div>
+
+  <!-- 结果 -->
+  <div class="result-section" id="result-section">
+    <!-- 成功 -->
+    <div id="result-success" style="display:none;">
+      <div class="result-success">
+        <div class="check"></div>
+        <div>
+          <div class="msg">翻译完成！</div>
+          <div class="sub" id="result-filename"></div>
+        </div>
+      </div>
+      <button class="btn-download" id="btn-download" onclick="downloadFile()">
+        下载翻译文件
+      </button>
+    </div>
+    <!-- 失败 -->
+    <div id="result-error" style="display:none;">
+      <div class="result-error">
+        <div class="err-title">翻译失败</div>
+        <div class="err-msg" id="err-msg">请检查文件格式或网络连接后重试。</div>
+      </div>
+      <button class="btn-retry" onclick="resetUI()">重新上传</button>
+    </div>
+  </div>
+
+</div>
+
+<footer>仅供内部使用 · 文件将在 24 小时后自动删除</footer>
+
+<script>
+  // ── 状态 ──
+  let selectedFile = null;
+  let sourceLang = 'zh';
+  let targetLang = 'en';
+  let currentTaskId = null;
+  let pollTimer = null;
+  let downloadUrl = null;
+
+  // ── 初始化：加载场景列表 ──
+  async function loadDomains() {
+    try {
+      const res = await fetch('/v1/domains');
+      const data = await res.json();
+      const sel = document.getElementById('domain-select');
+      sel.innerHTML = '';
+      data.domains.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d.value;
+        opt.textContent = d.label;
+        sel.appendChild(opt);
+      });
+    } catch (e) {
+      console.warn('无法加载场景列表', e);
+    }
+  }
+  loadDomains();
+
+  // ── 文件拖拽 ──
+  const dropZone = document.getElementById('drop-zone');
+  const fileInput = document.getElementById('file-input');
+
+  dropZone.addEventListener('click', () => fileInput.click());
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    const f = e.dataTransfer.files[0];
+    if (f) handleFile(f);
+  });
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) handleFile(fileInput.files[0]);
+  });
+
+  function handleFile(f) {
+    if (!f.name.toLowerCase().endsWith('.pptx')) {
+      alert('仅支持 .pptx 格式文件');
+      return;
+    }
+    if (f.size > 50 * 1024 * 1024) {
+      alert('文件大小超过 50 MB 限制');
+      return;
+    }
+    selectedFile = f;
+    document.getElementById('file-name').textContent = f.name + '  (' + (f.size / 1024 / 1024).toFixed(1) + ' MB)';
+    document.getElementById('file-info').style.display = 'flex';
+
+    const btn = document.getElementById('btn-translate');
+    btn.disabled = false;
+    btn.textContent = '开始翻译';
+
+    // 重置结果区
+    resetResult();
+  }
+
+  // ── 语言切换 ──
+  function setLang(src, tgt) {
+    sourceLang = src;
+    targetLang = tgt;
+    document.getElementById('btn-zh-en').classList.toggle('active', src === 'zh');
+    document.getElementById('btn-en-zh').classList.toggle('active', src === 'en');
+  }
+
+  // ── 开始翻译 ──
+  async function startTranslation() {
+    if (!selectedFile) return;
+
+    const domain = document.getElementById('domain-select').value;
+
+    // 切换 UI 到翻译中状态
+    document.getElementById('btn-translate').disabled = true;
+    document.getElementById('btn-translate').textContent = '翻译中...';
+    showProgress(true);
+    resetResult();
+
+    // 上传文件
+    const form = new FormData();
+    form.append('file', selectedFile);
+    form.append('source_lang', sourceLang);
+    form.append('target_lang', targetLang);
+    form.append('domain', domain);
+
+    try {
+      const res = await fetch('/v1/translate', { method: 'POST', body: form });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.detail || '上传失败');
+      }
+      const data = await res.json();
+      currentTaskId = data.task_id;
+      pollStatus();
+    } catch (e) {
+      showError(e.message);
+    }
+  }
+
+  // ── 轮询进度 ──
+  function pollStatus() {
+    pollTimer = setInterval(async () => {
+      try {
+        const res = await fetch(`/v1/translate/${currentTaskId}`);
+        const data = await res.json();
+
+        if (data.status === 'completed') {
+          clearInterval(pollTimer);
+          downloadUrl = data.download_url;
+          setProgress(1.0);
+          showSuccess();
+        } else if (data.status === 'failed') {
+          clearInterval(pollTimer);
+          showError(data.error?.message || '翻译失败，请重试');
+        } else {
+          // processing / queued
+          const p = data.progress || 0;
+          setProgress(p);
+          document.getElementById('status-text').textContent =
+            data.status === 'queued' ? '等待中...' : `正在翻译  第 ${Math.round(p * 100)}% ...`;
+        }
+      } catch (e) {
+        clearInterval(pollTimer);
+        showError('网络异常，请刷新页面重试');
+      }
+    }, 2000);
+  }
+
+  // ── 下载 ──
+  function downloadFile() {
+    if (!downloadUrl) return;
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = '';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  // ── UI 辅助 ──
+  function showProgress(show) {
+    const sec = document.getElementById('progress-section');
+    sec.classList.toggle('show', show);
+    if (show) {
+      document.getElementById('progress-fill').classList.add('indeterminate');
+      document.getElementById('pct-text').textContent = '0%';
+    }
+  }
+
+  function setProgress(p) {
+    const fill = document.getElementById('progress-fill');
+    fill.classList.remove('indeterminate');
+    fill.style.width = (p * 100).toFixed(0) + '%';
+    document.getElementById('pct-text').textContent = (p * 100).toFixed(0) + '%';
+    document.getElementById('status-text').textContent = p >= 1 ? '翻译完成！' : '正在翻译...';
+  }
+
+  function showSuccess() {
+    document.getElementById('result-section').classList.add('show');
+    document.getElementById('result-success').style.display = 'block';
+    document.getElementById('result-error').style.display = 'none';
+    document.getElementById('result-filename').textContent =
+      selectedFile ? selectedFile.name.replace('.pptx', '') + '_translated.pptx' : '';
+    document.getElementById('btn-translate').textContent = '重新翻译';
+    document.getElementById('btn-translate').disabled = false;
+  }
+
+  function showError(msg) {
+    showProgress(false);
+    document.getElementById('result-section').classList.add('show');
+    document.getElementById('result-success').style.display = 'none';
+    document.getElementById('result-error').style.display = 'block';
+    document.getElementById('err-msg').textContent = msg;
+    document.getElementById('btn-translate').textContent = '重新翻译';
+    document.getElementById('btn-translate').disabled = !selectedFile;
+  }
+
+  function resetResult() {
+    document.getElementById('result-section').classList.remove('show');
+    document.getElementById('result-success').style.display = 'none';
+    document.getElementById('result-error').style.display = 'none';
+  }
+
+  function resetUI() {
+    if (pollTimer) clearInterval(pollTimer);
+    selectedFile = null;
+    currentTaskId = null;
+    downloadUrl = null;
+    fileInput.value = '';
+    document.getElementById('file-info').style.display = 'none';
+    document.getElementById('btn-translate').disabled = true;
+    document.getElementById('btn-translate').textContent = '选择文件后开始翻译';
+    showProgress(false);
+    resetResult();
+  }
+</script>
+</body>
+</html>
