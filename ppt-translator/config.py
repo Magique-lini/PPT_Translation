@@ -2,20 +2,17 @@
 #    配置文件 
 # ============================================================
 
-# ① 你的 API Key（Ask Bosch CN Model Farm）
-API_KEY = "dd3ccd72dd4d4abaa686114a35e271d9"
+# ① 你的 API Key
+API_KEY = ""
 
-# ② OpenAI 兼容 endpoint（Ask Bosch CN）
-BASE_URL = "https://aigc.bosch.com.cn/llmservice/api/v1"
+# ② URL
+BASE_URL = ""
 
-# ③ 使用的模型（联系管理员确认可用模型名，常见值如下）
+# ③ 使用的模型
 #    参考：gemini-2.5-flash-lite / gpt-4o-mini / gpt-4o
 MODEL = "gemini-2.5-flash-lite"
 
-# ④ HTTP 代理（公司网络无法直连外网时填写，否则留空 ""）
-#    格式示例：
-#      "http://proxy.example.com:8080"
-#      "http://username:password@proxy.example.com:8080"
+# ④ HTTP 代理
 #    若已设置系统环境变量 HTTPS_PROXY，此项可留空
 PROXY = ""
 
