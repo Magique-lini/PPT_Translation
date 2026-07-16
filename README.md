@@ -1,4 +1,4 @@
-# PPT 翻译工具 · 产品需求文档
+# PPT 翻译工具
 首先看效果图：
 <img width="2817" height="1204" alt="o_2" src="https://github.com/user-attachments/assets/cec86776-71ba-4e41-b542-81af25555cea" />
 <img width="2936" height="1392" alt="o_1" src="https://github.com/user-attachments/assets/4b798a3d-a78e-4f99-805c-e27e0d6a105c" />
